@@ -1,0 +1,59 @@
+RealTimers = {
+    GetTime = nil,
+    _worldTime = nil,
+}
+
+FakeTimer = {
+    currentTime = 0,
+    _worldTime = 0
+}
+
+function FakeTimer:new(o)
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+
+    return o
+end
+
+function FakeTimer:advanceTime(milliseconds, gamePaused)
+    if self.currentTime == nil then
+        error("Timer not initialized. Use setTime() to initialize the timer.")
+    end
+
+    self.currentTime = self.currentTime + milliseconds
+
+    if not gamePaused then
+        _worldTime = self.currentTime
+    end
+end
+
+function FakeTimer:getTime()
+    if self.currentTime == nil then
+        return 0
+    end
+
+    return self.currentTime
+end
+
+function FakeTimer:setTime(seconds)
+    self.currentTime = seconds
+end
+
+UseFakeTime = function(options)
+    RealTimers.GetTime = GetTime
+
+    local clock = FakeTimer:new(options)
+    GetTime = function()
+        return clock:getTime()
+    end
+
+    _worldTime = clock.currentTime
+
+    return clock
+end
+
+RestoreRealTime = function()
+    GetTime = RealTimers.GetTime
+    _worldTime = RealTimers._worldTime
+end

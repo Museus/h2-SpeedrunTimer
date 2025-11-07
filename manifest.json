@@ -1,0 +1,9 @@
+{
+  "namespace": "HadesSpeedrunning",
+  "name": "SpeedrunTimer",
+  "description": "Tracks and exposes RTA and LRT times for attempts.",
+  "version_number": "0.0.1",
+  "dependencies": [],
+  "website_url": "https://github.com/Hades-Speedrunning/h2-SpeedrunTimer",
+  "FullName": "HadesSpeedrunning-SpeedrunTimer"
+}
