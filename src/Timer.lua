@@ -29,11 +29,15 @@ function Timer:new(args)
     return o
 end
 
+function Timer:init(startingOffset)
+    self.ElapsedTime = startingOffset or 0
+end
+
 --- Start the timer.
 -- @param startingOffset The time to start the timer from. If nil, it will start at 0.
 function Timer:start(startingOffset)
+    self:init(startingOffset)
     self.Running = true
-    self.ElapsedTime = startingOffset or 0
 end
 
 --- Set the starting offset for the timer, which is the time that the timer will start from.

@@ -57,3 +57,32 @@ RestoreRealTime = function()
     GetTime = RealTimers.GetTime
     _worldTime = RealTimers._worldTime
 end
+
+
+MockLoadListener = {
+    onLoad = {},
+}
+
+function MockLoadListener:new(o)
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+
+    return o
+end
+
+function MockLoadListener:addLoadHook(hook)
+    table.insert(self.onLoad, hook)
+end
+
+function MockLoadListener:startLoad()
+    for _, func in ipairs(self.onLoad) do
+        func(true)
+    end
+end
+
+function MockLoadListener:endLoad()
+    for _, func in ipairs(self.onLoad) do
+        func(false)
+    end
+end

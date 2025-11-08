@@ -32,8 +32,11 @@ end
 --- Start the timer.
 -- @param startingOffset The time to start the timer from. If nil, it will start at 0.
 function RtaTimer:start(startingOffset)
+    self:init()
     Timer.start(self, startingOffset)
+end
 
+function RtaTimer:init()
     self.Cycle = 0
     self.PreviousWorldTime = _worldTime
     self.StartingSystemTime = GetTime({})
@@ -46,6 +49,10 @@ function RtaTimer:resume()
     end
 
     self:start(self.ElapsedTime)
+end
+
+function RtaTimer:getTime()
+    return Timer.getTime(self)
 end
 
 --- Set the current time for the timer, which is the time that the timer will start from.

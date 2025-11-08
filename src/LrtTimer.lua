@@ -15,30 +15,18 @@
 -- LRT cannot do that accurately because it can stop and start at any time. Therefore, LRT will grab
 -- system time each time a LoadEvent occurs to ensure accuracy.
 
-LoadEvent = {
-    SystemTime = nil,
-    IsLoading = false,
-}
-
-function LoadEvent:new(isLoading)
-    local o = {
-        SystemTime = GetTime({}),
-        IsLoading = isLoading,
-    }
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
+require("src/RtaTimer")
 
 LrtTimer = {
     Running = false,
     Loading = false,
-    LoadEvents = {},
+    TimeElapsedThisLoad = nil,
+    WasReset = false,
 
-    ---type Timer
-    RealTimer = nil,
-    ---type Timer
-    LoadTimer = nil,
+    ---type RtaTimer
+    RealTimer = RtaTimer:new(),
+    ---type RtaTimer
+    LoadTimer = RtaTimer:new(),
 }
 
 function LrtTimer:new(args)
@@ -54,13 +42,46 @@ function LrtTimer:new(args)
     return o
 end
 
+function LrtTimer:init()
+    self.RealTimer:init()
+    self.LoadTimer:init()
+
+    self.TimeElapsedThisLoad = 0
+    self.WasReset = false
+end
+
 function LrtTimer:start()
+    self:init()
     self.Running = true
+    self.RealTimer:start()
 end
 
 function LrtTimer:stop()
     self.Running = false
+    self.RealTimer:stop()
+    self.LoadTimer:stop()
+end
+
+function LrtTimer:startLoad()
+    if self.Loading then
+        return
+    end
+
+    self.Loading = true
+    self.LoadTimer:resume()
+    self.LoadStartSystemTime = GetTime({})
+    self.TimeElapsedThisLoad = 0
+end
+
+function LrtTimer:stopLoad()
+    if not self.Loading then
+        return
+    end
+
+    self.Loading = false
+    self.LoadTimer:stop()
     self:trueUp()
+    self.TimeElapsedThisLoad = 0
 end
 
 function LrtTimer:processLoadEvent(isLoading)
@@ -68,32 +89,64 @@ function LrtTimer:processLoadEvent(isLoading)
         return
     end
 
-    if isLoading and not self.Loading then
-        -- Starting a load
-        self.Loading = true
-        self.LoadTimer:start()
-    elseif not isLoading and self.Loading then
-        -- Ending a load
-        self.Loading = false
-        self.LoadTimer:stop()
+    if isLoading then
+        self:startLoad()
+    elseif not isLoading then
+        self:stopLoad()
     end
-
-    self:trueUp()
 end
 
 function LrtTimer:reset()
-    self.LrtTimer.Running = false
+    self.Running = false
     self.RealTimer:reset()
     self.LoadTimer:reset()
+    self.WasReset = true
 end
 
-function LrtTimer:processElapsedTime()
-    self.ElapsedTime = LrtTimer.StartTime, _worldTime - LrtTimer.PreviousWorldTime
-    self.PreviousWorldTime = _worldTime
-    self.Cycle = LrtTimer.Cycle + 1
+function LrtTimer:processWorldTime()
+    local elapsed = _worldTime - self.LoadTimer.PreviousWorldTime
+    self.LoadTimer.PreviousWorldTime = _worldTime
+
+    self.TimeElapsedThisLoad = self.TimeElapsedThisLoad + elapsed
+end
+
+function LrtTimer:update()
+    self.RealTimer:update()
+
+    if not self.Loading then
+        return
+    end
+
+    if self.LoadTimer.Cycle < 30 then
+        self:processWorldTime()
+        self.LoadTimer.Cycle = self.LoadTimer.Cycle + 1
+        return
+    end
+
+    self.Cycle = 0
+    self:trueUp()
 end
 
 function LrtTimer:trueUp()
+    self.RealTimer:trueUp()
+
     self.Cycle = 0
-    self.ElapsedTime = GetTime({}) - self.StartTime
+
+    if self.Loading then
+        local now = GetTime({})
+        self.TimeElapsedThisLoad = now - self.LoadStartSystemTime
+        self.LoadStartSystemTime = now
+    else
+        self.TimeElapsedThisLoad = 0
+    end
+
+    local currentLoadTime = self.LoadTimer:getTime()
+    self.LoadTimer:setTime(currentLoadTime + self.TimeElapsedThisLoad)
+end
+
+function LrtTimer:getTime()
+    local realTime = self.RealTimer:getTime()
+    local loadTime = self.LoadTimer:getTime()
+
+    return realTime - loadTime - self.TimeElapsedThisLoad
 end

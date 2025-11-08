@@ -4,20 +4,12 @@ require("tests/TestUtils")
 local lu = require('luaunit')
 
 TestRtaTimer = {
-    midrunState = {
-        Running = true,
-        WasReset = false,
-
-        ElapsedTime = 250,
-        Splits = {},
-        StartingOffset = 0,
-    },
     timer = nil,
     clock = nil,
 }
 
 function TestRtaTimer:setUp()
-    self.clock = UseFakeTime({ currentTime = 100 })
+    self.clock = UseFakeTime({ currentTime = 0 })
     self.timer = RtaTimer:new()
 end
 
