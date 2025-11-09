@@ -10,39 +10,37 @@ mod = modutil.mod.Mod.Register(_PLUGIN.guid)
 
 mod.Locales = mod.Locales or {}
 
-ModUtil.WrapBaseFunction("WindowDropEntrance", function( baseFunc, ... )
+mod.SpeedrunTimer = SpeedrunTimer:new()
+
+modutil.mod.Path.Wrap("WindowDropEntrance", function(baseFunc, ...)
     local val = baseFunc(...)
 
-    -- If single run, timer should always restart
-    -- If multiweapon, only restart if timer was reset
-    if not config.MultiWeapon or RtaTimer.TimerWasReset then
-        RtaTimer.StartTime = GetTime({ })
-        RtaTimer.TimerWasReset = false
+    if ShouldStartTimerOnRunStart() then
+        mod.SpeedrunTimer:start()
     end
 
-    thread(RtaTimer.StartRtaTimer)
+    thread(mod.SpeedrunTimer:getUpdateThread())
 
     return val
 end, RtaTimer)
 
 
 -- Stop timer when Hades dies (but leave it on screen)
-ModUtil.WrapBaseFunction("HadesKillPresentation", function( baseFunc, ...)
-   RtaTimer.Running = false
-   baseFunc(...)
+modutil.mod.Path.Wrap("HadesKillPresentation", function(baseFunc, ...)
+    mod.SpeedrunTimer:stop()
+    baseFunc(...)
 end, RtaTimer)
 
 
-ModUtil.LoadOnce(
-	function()
-		-- If not in a run, reset timer and prepare for run start
-		if CurrentRun.Hero.IsDead then
-			RtaTimer.TimerWasReset = true
-		-- If in a run, just start the timer from the time the mod was loaded
-		else
-			RtaTimer.TimerWasReset = false
-			RtaTimer.StartTime = GetTime({ })
-			thread(RtaTimer.StartRtaTimer)
-		end
-	end
+modutil.mod.ModUtil.LoadOnce(
+    function()
+        -- If not in a run, reset timer and prepare for run start
+        if CurrentRun.Hero.IsDead then
+            mod.SpeedrunTimer:reset()
+            -- If in a run, just start the timer from the time the mod was loaded
+        else
+            mod.SpeedrunTimer:start()
+            thread(mod.SpeedrunTimer:getUpdateThread())
+        end
+    end
 )

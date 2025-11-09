@@ -1,7 +1,6 @@
 ---@meta HadesSpeedrunning-SpeedrunTimer
 local public = {
-    RtaTime,
-    LrtTime,
+    SpeedrunTimer,
 }
 
 -- document whatever you made publicly available to other plugins here

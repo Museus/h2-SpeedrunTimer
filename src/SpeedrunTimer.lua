@@ -42,9 +42,21 @@ function SpeedrunTimer:getLoadHook()
 end
 
 function SpeedrunTimer:start()
-    self.LrtTimer:start()
     self.RtaTimer:start()
+    self.LrtTimer:start()
     -- self.IgtTimer:start()
+end
+
+function SpeedrunTimer:getUpdateThread()
+    local updateThreadClosure = function()
+        while self.Running do
+            self:update()
+            -- Update once per frame
+            wait(0.016)
+        end
+    end
+
+    return updateThreadClosure
 end
 
 function SpeedrunTimer:update()

@@ -1,11 +1,13 @@
 RealTimers = {
     GetTime = nil,
     _worldTime = nil,
+    wait = nil,
 }
 
 FakeTimer = {
     currentTime = 0,
-    _worldTime = 0
+    _worldTime = 0,
+    wait = nil,
 }
 
 function FakeTimer:new(o)
@@ -49,6 +51,11 @@ UseFakeTime = function(options)
     end
 
     _worldTime = clock.currentTime
+    RealTimers.wait = wait
+
+    wait = function(seconds)
+        clock:advanceTime(seconds * 1000)
+    end
 
     return clock
 end
@@ -56,6 +63,7 @@ end
 RestoreRealTime = function()
     GetTime = RealTimers.GetTime
     _worldTime = RealTimers._worldTime
+    wait = RealTimers.wait
 end
 
 
